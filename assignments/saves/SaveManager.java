@@ -1,57 +1,107 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.io.*;
+import java.util.*;
 
 public class SaveManager {
 
-    // ─────── 🟢 Core (60 оноо) ───────
+    /**
+     * Core: Нэг баатрын мэдээллийг CSV хэлбэрээр хадгалах
+     */
+    public static void save(Character hero, String path) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            String record = String.format("%s,%d,%d,%d",
+                    hero.getName(), hero.getHp(), hero.getMp(), hero.getGold());
+            writer.write(record);
+            writer.newLine();
+        }
+    }
 
-    // TODO: save(Character c, String path) → void
-    // - throws IOException
-    // - try-with-resources BufferedWriter + FileWriter ашиглана
-    // - бичих формат: "name,hp,mp,gold\n"
-    // - жишээ: "Aragorn,100,50,250"
+    /**
+     * Core: CSV-ээс баатрын мэдээллийг сэргээх
+     */
+    public static Character load(String path) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String dataLine = reader.readLine();
+            if (dataLine == null) throw new IOException("Save file is empty.");
 
-    // TODO: load(String path) → Character
-    // - throws IOException
-    // - try-with-resources BufferedReader + FileReader ашиглана
-    // - эхний мөрийг readLine()
-    // - таслалаар split → parts[0] (name), parts[1..3] (int parseInt)
-    // - new Character(parts[0], hp, mp, gold) буцаана
+            String[] fields = dataLine.split(",");
+            return new Character(
+                    fields[0],
+                    Integer.parseInt(fields[1]),
+                    Integer.parseInt(fields[2]),
+                    Integer.parseInt(fields[3])
+            );
+        }
+    }
 
-    // ─────── 🟡 Stretch (30 оноо) ───────
+    /**
+     * Stretch: Бүх багийг (Party) мөр мөрөөр хадгалах
+     */
+    public static void saveParty(List<Character> squad, String path) throws IOException {
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
+            for (Character member : squad) {
+                out.write(member.getName() + "," + member.getHp() + "," +
+                        member.getMp() + "," + member.getGold());
+                out.newLine();
+            }
+        }
+    }
 
-    // TODO: saveParty(List<Character> party, String path) → void
-    // - throws IOException
-    // - баатар тус бүрийг нэг мөрөнд бичнэ
+    /**
+     * Stretch: Файлаас багийг уншиж List үүсгэх
+     */
+    public static List<Character> loadParty(String path) throws IOException {
+        List<Character> team = new ArrayList<>();
+        try (BufferedReader in = new BufferedReader(new FileReader(path))) {
+            String row;
+            while ((row = in.readLine()) != null) {
+                if (row.isBlank()) continue;
+                String[] info = row.split(",");
+                team.add(new Character(info[0], Integer.parseInt(info[1]),
+                        Integer.parseInt(info[2]), Integer.parseInt(info[3])));
+            }
+        }
+        return team;
+    }
 
-    // TODO: loadParty(String path) → List<Character>
-    // - throws IOException
-    // - мөр тус бүрийг парс хийж жагсаалтад нэмнэ
+    /**
+     * Stretch: Inventory-г (ItemName, Count) хадгалах
+     */
+    public static void saveInventory(Map<String, Integer> storage, String path) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            for (var entry : storage.entrySet()) {
+                writer.write(entry.getKey() + "," + entry.getValue());
+                writer.newLine();
+            }
+        }
+    }
 
-    // TODO: saveInventory(Map<String, Integer> inv, String path) → void
-    // - throws IOException
-    // - бичих формат: "itemname,count\n"
+    /**
+     * Stretch: Inventory-г файлаас Map-д унших
+     */
+    public static Map<String, Integer> loadInventory(String path) throws IOException {
+        Map<String, Integer> itemsMap = new HashMap<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isBlank()) continue;
+                String[] entry = line.split(",");
+                itemsMap.put(entry[0], Integer.parseInt(entry[1]));
+            }
+        }
+        return itemsMap;
+    }
 
-    // TODO: loadInventory(String path) → Map<String, Integer>
-    // - throws IOException
-    // - мөр тус бүрийг парс хийж Map-д нэмнэ
-
-    // ─────── 🔴 Bonus (10 оноо) ───────
-
-    // TODO: saveJson(Character c, String path) → void
-    // - throws IOException
-    // - бичих формат: {"name":"Aragorn","hp":100,"mp":50,"gold":250}
-    // - String concat-оор хангалттай (ямар ч library хэрэггүй)
-
-    // TODO: load(String path) нь байхгүй файлд автоматаар IOException шиднэ
-    // - FileReader нь байхгүй файлыг нээх үед IOException шидэх тул
-    //   нэмэлт код бичих шаардлагагүй. Зүгээр 'throws IOException'
-    //   зарлаж үлдээхэд л шаардлагатай bonus-ыг хангах.
+    /**
+     * Bonus: Баатрыг JSON форматтай текст файлд хадгалах
+     */
+    public static void saveJson(Character c, String path) throws IOException {
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(path))) {
+            String jsonOutput = String.format(
+                    "{\"name\":\"%s\",\"hp\":%d,\"mp\":%d,\"gold\":%d}",
+                    c.getName(), c.getHp(), c.getMp(), c.getGold()
+            );
+            writer.write(jsonOutput);
+        }
+    }
 }
